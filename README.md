@@ -8,6 +8,9 @@ The database of Wait's parameters beta and h' for different values of Ix (solar 
 ## Data
 The parameters data were obtained computation using Fortran code (LWPC) on computer cluster. 
 
+## Prereqs
+python3, numpy, scipy, matplotlib
+
 ## Usage
 
 The database is already generated with the csv_to_sqlite.py script. It
