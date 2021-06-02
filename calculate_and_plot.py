@@ -4,6 +4,7 @@ from sqlite_utils import *
 import math
 from collections import defaultdict
 import operator
+import warnings
 from itertools import groupby
 from decimal import Decimal
 import csv
@@ -54,6 +55,9 @@ def calculate_and_plot(ix):
 
     # we fit first most of the curve as 15th degree polynomial,
     # then skip jumpy parts then fit as 1st (2nd?) degree polynomial
+
+    warnings.filterwarnings('ignore')
+
     xpoly1 = np.linspace(x[0], x[-40], num=100, endpoint=True)
     xpoly2 = np.linspace(x[-10], x[-1], num=100, endpoint=True)
 
@@ -90,7 +94,7 @@ def calculate_and_plot(ix):
 
     #write ix and height tuples to a csv file
     ed_filename = "results/ed(ix=%.2E).csv" % (ix)
-    with open(ed_filename, mode='w') as f:
+    with open(ed_filename, mode='w', newline='') as f:
         fieldnames = ["#Height(km)","Electron Density(m^-3)"]
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
