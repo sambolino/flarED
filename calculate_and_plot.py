@@ -15,6 +15,41 @@ from scipy.interpolate import interp1d, CubicSpline
 
 def calculate_and_plot(ix):
 
+    y, x, beta, hprim = _calculate1(ix)
+    y_easy, x_easy = _calculate_easy(ix)
+    f = interp1d(x, y)
+    f_easy = interp1d(x_easy, y_easy)
+
+    #plot results with y as a log
+    xnew = x
+    ynew = f(x)
+    xnew_easy = x_easy
+    ynew_easy = f_easy(x_easy)
+
+    for h in x_easy:
+        print("%s, %s" % (f(h), f_easy(h)))
+
+    font = {'family': 'serif',
+        'color':  'darkred',
+        'weight': 'normal',
+        'size': 12,
+        }
+    plt.yscale('log')
+    plt.plot(x, y, 'bo', markersize=4, markerfacecolor='thistle')
+    plt.plot(xnew, ynew, '-', color="blue")
+    plt.plot(x_easy, y_easy, 'bo', markersize=4, markerfacecolor='thistle')
+    plt.plot(xnew_easy, ynew_easy, '-', color="blue")
+
+    plt.title(r"Ix=%.2E $[\mathrm{W*m^{-2}}$], $\mathrm{\beta}$=%.2E $\mathrm{[km^{-1}]}$, H'=%.2f $[\mathrm{km}]$" %(Decimal(ix), Decimal(beta), hprim), fontdict=font)
+    plt.xlabel(r"Height $[\mathrm{km}]$", fontdict=font)
+    #plt.ylabel(r"$1.43* 10^{13}*e^{-0.15*H'}*e^{(\beta-0.15)*(h-H')} [m^{-3}]$", fontdict=font, fontsize=11)
+    plt.ylabel(r"Electron Density $[\mathrm{m^{-3}}]$", fontdict=font)
+    #extra = Rectangle((0, 0), 0, 0, color="w")
+
+    plt.show()
+
+def _calculate1(ix):
+
     database = r"data/flarED.db"
     table_name = 'flares'
     conn = create_connection(database)
@@ -95,12 +130,12 @@ def calculate_and_plot(ix):
     #write ix and height tuples to a csv file
     ed_filename = "results/ed(ix=%.2E).csv" % (ix)
     with open(ed_filename, mode='w', newline='') as f:
-        fieldnames = ["#Height(km)","Electron Density(m^-3)"]
+        fieldnames = ['"Height(km)"','"Electron Density(m^-3)"']
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
 
         for i in range(len(h_list)):
-            writer.writerow({'#Height(km)': h_list[i], 'Electron Density(m^-3)': ed_list[i]})
+            writer.writerow({'"Height(km)"': h_list[i], '"Electron Density(m^-3)"': ed_list[i]})
 
     #write parameterers to a txt file
     params_filename = "results/params(ix=%.2E).txt" % (ix)
@@ -109,27 +144,25 @@ def calculate_and_plot(ix):
         f.write("beta = %.2E\n" %(beta))
         f.write("hprim = %.2f" %(hprim))
 
-    y = ed_list
-    x = h_list
-    f = interp1d(x, y)
+    return ed_list, h_list, beta, hprim
 
-    #plot results with y as a log
-    xnew = x
-    ynew = f(x)
+def _calculate_easy(ix):
 
-    font = {'family': 'serif',
-        'color':  'darkred',
-        'weight': 'normal',
-        'size': 12,
-        }
-    plt.yscale('log')
-    plt.plot(x, y, 'bo', markersize=4, markerfacecolor='thistle')
-    plt.plot(xnew, ynew, '-', color="blue")
+    a_file = open("data/easyfit.csv")
+    reader = csv.reader(a_file, quoting=csv.QUOTE_NONNUMERIC)
+    header = next(reader, None)
+    rows = list(reader)
 
-    plt.title(r"Ix=%.2E $[\mathrm{W*m^{-2}}$], $\mathrm{\beta}$=%.2E $\mathrm{[km^{-1}]}$, H'=%.2f $[\mathrm{km}]$" %(Decimal(ix), Decimal(beta), hprim), fontdict=font)
-    plt.xlabel(r"Height $[\mathrm{km}]$", fontdict=font)
-    #plt.ylabel(r"$1.43* 10^{13}*e^{-0.15*H'}*e^{(\beta-0.15)*(h-H')} [m^{-3}]$", fontdict=font, fontsize=11)
-    plt.ylabel(r"Electron Density $[\mathrm{m^{-3}}]$", fontdict=font)
-    #extra = Rectangle((0, 0), 0, 0, color="w")
+    ed_list = []
 
-    plt.show()
+    #extract first column of each row
+    h_list = _extract_column(rows, 0)
+
+    for row in rows:
+        ed_list.append(10**(row[1]+row[2]*math.log10(ix)+row[3]*math.log10(ix)**2))
+
+    return ed_list, h_list
+
+def _extract_column(rows, column):
+    "return a specific column from a list of rows"
+    return [row[column] for row in rows]
