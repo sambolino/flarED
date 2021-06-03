@@ -2,7 +2,7 @@
 
 import sys
 import argparse
-from calculate_and_plot import *
+from flarED import flarED
 
 """ Class for checking the parameter range constraint """
 class Range(object):
@@ -30,4 +30,6 @@ PARSER.add_argument("-ix", "--ix", type=float, default=None, required=True,
 ARGS = PARSER.parse_args()
 
 if __name__ == "__main__":
-    calculate_and_plot(ARGS.ix)
+    f = flarED(ARGS.ix)
+    f.calculate_and_plot()
+
