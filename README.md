@@ -7,7 +7,7 @@ The database of Wait's parameters beta and h' for different values of Ix (solar 
 
 ## EasyFit
 
-To enable the better and more adequate use of data, we give ED results obtained using simple and accurate fitting formula based on a least-squares method, which is logarithmic and represented by a second-degree polynomial $`log(ED(h)) = a1(h) + a2(h)*log(Ix) + a3(h)*(log(Ix))^2`$ with height dependent coefficients a1(h), a2(h), a3(h)
+To enable the better and more adequate use of data, we give ED results obtained using simple and accurate fitting formula based on a least-squares method, which is logarithmic and represented by a second-degree polynomial `log(ED(h)) = a1(h) + a2(h)*log(Ix) + a3(h)*(log(Ix))^2` with height dependent coefficients a1(h), a2(h), a3(h)
 
 ## Data
 The parameters data were obtained computation using Fortran code (LWPC) on computer cluster. 
