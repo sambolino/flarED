@@ -5,6 +5,10 @@ For the input values of solar X-ray flux (Ix) we evaluate (interpolate) Wait's p
 
 The database of Wait's parameters beta and h' for different values of Ix (solar X-ray flux) i.e. different classes of solar flares (during the period of ascending phase and maximum of the solar cycle 24 i.e. during 2009–2014) is made. Solar flares are monitored and analyzed by VLF/LF technique and  parameters beta and h' obtained by method described in [1,2].
 
+## EasyFit
+
+To enable the better and more adequate use of data, we give ED results obtained using simple and accurate fitting formula based on a least-squares method, which is logarithmic and represented by a second-degree polynomial log(ED(h))) = a1(h) + a2(h)*log(Ix) + a3(h)*(log(Ix))^2 with height dependent coefficients a1(h), a2(h), a3(h)
+
 ## Data
 The parameters data were obtained computation using Fortran code (LWPC) on computer cluster. 
 
@@ -24,7 +28,7 @@ where IX is Solar X-Ray Flare, with accepted float values between [8e-07, 1e-04]
 
 ## Output
 
-The output consists of a plot with altitude profile of electron density (sample plot is saved under img folder, you can choose not to save it or to save it somewhere else), csv file with columns of height and electron density and txt file with input Ix value and obtained parametres beta and h' (under results folder).
+The output consists of a plot with altitude profile of electron density (sample plot is saved under img folder, you can choose not to save it or to save it somewhere else), csv files (for flared and easyfit methods) with columns of height and electron density and txt file with input Ix value and obtained parametres beta and h' (under results folder).
 
 ![sample output](img/Figure_1.png)
 
