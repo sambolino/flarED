@@ -25,7 +25,7 @@ class flarED:
         f = interp1d(x, y)
         f_easy = interp1d(x_easy, y_easy)
 
-        #plot results with y as a log
+        # plot flared and easyfit functions with y as log
         xnew = x
         ynew = f(x)
         xnew_easy = x_easy
@@ -40,19 +40,16 @@ class flarED:
             'size': 12,
             }
         plt.yscale('log')
-        #plt.plot(x, y, '-o', markersize=4, mec='blue', mfc='white', label="flarED method")
-        #plt.plot(xnew, ynew, '-', color="thistle")
-        plt.plot(xnew, ynew, '-o', color="thistle", markersize=4, mec='blue', mfc='white', label="flarED method")
-        #plt.plot(xnew, ynew, '-', color="thistle")
-        plt.plot(xnew_easy, ynew_easy, '-o', color="purple", markersize=4, mec='red', mfc='white', label="easyFit method")
-        #plt.plot(xnew_easy, ynew_easy, '-', color="purple")
+        plt.plot(xnew, ynew, '-o', color="thistle", markersize=4,
+                mec='blue', mfc='white', label="flarED method")
+        plt.plot(xnew_easy, ynew_easy, '-o', color="purple", markersize=4,
+                mec='red', mfc='white', label="easyFit method")
 
-        plt.title(r"Ix=%.2E $[\mathrm{W*m^{-2}}$], $\mathrm{\beta}$=%.2E $\mathrm{[km^{-1}]}$, H'=%.2f $[\mathrm{km}]$" %(Decimal(self.ix), Decimal(self.beta), self.hprim), fontdict=font)
+        plt.title(r"Ix=%.2E $[\mathrm{W*m^{-2}}$], $\mathrm{\beta}$=%.2E $\mathrm{[km^{-1}]}$, H'=%.2f $[\mathrm{km}]$" \
+                %(Decimal(self.ix), Decimal(self.beta), self.hprim), fontdict=font)
         plt.legend(loc='best')
         plt.xlabel(r"Height $[\mathrm{km}]$", fontdict=font)
-        #plt.ylabel(r"$1.43* 10^{13}*e^{-0.15*H'}*e^{(\beta-0.15)*(h-H')} [m^{-3}]$", fontdict=font, fontsize=11)
         plt.ylabel(r"Electron Density $[\mathrm{m^{-3}}]$", fontdict=font)
-        #extra = Rectangle((0, 0), 0, 0, color="w")
 
         plt.show()
 
@@ -62,16 +59,16 @@ class flarED:
         table_name = 'flares'
         conn = create_connection(database)
 
-        #query for ix,beta,height tuples
+        # query for ix,beta,height tuples
         with conn:
             sql = """SELECT ix, beta, reflection_height \
                     FROM %s \
                     ORDER BY ix;""" %(table_name)
             query = custom_query(conn, sql)
 
-        #there might be duplicated values for ix
-        #make a new list where all the ix duplicates will condense to a single value
-        #while new beta and h get average value from n duplicates
+        # there might be duplicated values for ix
+        # make a new list where all the ix duplicates will condense to a single
+        # value while new beta and h get average value from n duplicates
         list_of_averages = []
         for k, g in groupby(query, operator.itemgetter(0)):
             list_of_tuples = list(g)
@@ -88,8 +85,10 @@ class flarED:
             elif listlen==1:
                 list_of_averages.append(list_of_tuples[0])
 
-        #change the last ix value which was too large and was ruining the interpolation
-        list_of_averages[-1] = (0.0001, list_of_averages[-1][1], list_of_averages[-1][2])
+        # change the last ix value which was too large and was
+        # messing with the interpolation
+        list_of_averages[-1] = (0.0001, list_of_averages[-1][1],
+                list_of_averages[-1][2])
         ix_values, beta_values, h_values = map(list, zip(*list_of_averages))
 
         x = ix_values
@@ -97,8 +96,8 @@ class flarED:
         y2 = h_values
 
         # we fit first most of the curve as 15th degree polynomial,
-        # then skip jumpy parts then fit as 1st (2nd?) degree polynomial
-
+        # then skip jumpy parts then fit as 1st (but it looks like it's 2nd??)
+        # degree polynomial
         warnings.filterwarnings('ignore')
 
         xpoly1 = np.linspace(x[0], x[-40], num=100, endpoint=True)
@@ -112,12 +111,12 @@ class flarED:
         ypoly2 = np.polyval(np.polyfit(x, y, poly_deg), xpoly2)
         y2poly2 = np.polyval(np.polyfit(x, y2, poly_deg), xpoly2)
 
-        #glue the dots again
+        # glue the dots again
         xpoly = np.concatenate((xpoly1, xpoly2))
         ypoly = np.concatenate((ypoly1, ypoly2))
         y2poly = np.concatenate((y2poly1, y2poly2))
 
-        #interpolate and calculate x and y's for the whole range
+        # interpolate and calculate x and y's for the whole range
         f1 = interp1d(xpoly, ypoly)
         f2 = interp1d(xpoly, y2poly)
         xnew = np.linspace(x[0], x[-1], num=1000, endpoint=True)
@@ -130,17 +129,18 @@ class flarED:
         self.hprim = hprim
         ed_list=[]
 
-        #for a fixed range of h's from 50-90
+        # for a fixed range of h's from 50-90
         h_list = np.arange(50,91)
 
-        #calculate electron density values
+        # calculate electron density values
         for h in np.nditer(h_list):
-            ed_list.append(1.43*10**13*math.exp(-0.15*f2(self.ix))*math.exp((f1(self.ix)-0.15)*(h-f2(self.ix))))
+            ed_list.append(1.43*10**13*math.exp(-0.15*f2(self.ix))*\
+                    math.exp((f1(self.ix)-0.15)*(h-f2(self.ix))))
 
-        #write ix and height tuples to a csv file
+        # write ix and height tuples to a csv file
         self._write_to_csv("flared", h_list, ed_list)
 
-        #write parameterers to a txt file
+        # write parameterers to a txt file
         self._write_to_txt()
 
         return ed_list, h_list, beta, hprim
@@ -154,13 +154,14 @@ class flarED:
 
         ed_list = []
 
-        #extract first column of each row
+        # extract first column of each row
         h_list = self._extract_column(rows, 0)
 
         for row in rows:
-            ed_list.append(10**(row[1]+row[2]*math.log10(self.ix)+row[3]*math.log10(self.ix)**2))
+            ed_list.append(10**(row[1]+row[2]*math.log10(self.ix)+\
+                    row[3]*math.log10(self.ix)**2))
 
-        #write ix and height tuples to a csv file
+        # write ix and height tuples to a csv file
         self._write_to_csv("easyfit", h_list, ed_list)
 
         return ed_list, h_list
@@ -181,7 +182,8 @@ class flarED:
             writer.writeheader()
 
             for i in range(len(h_list)):
-                writer.writerow({'Height(km)': int(h_list[i]), 'Electron Density(m^-3)': ed_list[i]})
+                writer.writerow({'Height(km)': int(h_list[i]),
+                    'Electron Density(m^-3)': ed_list[i]})
 
     def _write_to_txt(self):
         """write ix beta and hprim to a parameters.txt """
@@ -190,4 +192,3 @@ class flarED:
             f.write("ix = %.2E\n" %(self.ix))
             f.write("beta = %.2E\n" %(self.beta))
             f.write("hprim = %.2f" %(self.hprim))
-
