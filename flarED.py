@@ -20,8 +20,8 @@ class flarED:
 
     def calculate_and_plot(self):
 
-        y, x, beta, hprim = self._calculate1()
-        y_easy, x_easy = self._calculate_easy()
+        y, x, beta, hprim = self._calculate_flared()
+        y_easy, x_easy = self._calculate_easyfit()
         f = interp1d(x, y)
         f_easy = interp1d(x_easy, y_easy)
 
@@ -56,7 +56,7 @@ class flarED:
 
         plt.show()
 
-    def _calculate1(self):
+    def _calculate_flared(self):
 
         database = r"data/flarED.db"
         table_name = 'flares'
@@ -145,7 +145,7 @@ class flarED:
 
         return ed_list, h_list, beta, hprim
 
-    def _calculate_easy(self):
+    def _calculate_easyfit(self):
 
         a_file = open("data/easyfit.csv")
         reader = csv.reader(a_file, quoting=csv.QUOTE_NONNUMERIC)
@@ -176,12 +176,12 @@ class flarED:
         """
         ed_filename = "results/ed(ix=%.2E)-%s.csv" % (self.ix, fit_type)
         with open(ed_filename, mode='w', newline='') as f:
-            fieldnames = ['"Height(km)"','"Electron Density(m^-3)"']
+            fieldnames = ['Height(km)','Electron Density(m^-3)']
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
 
             for i in range(len(h_list)):
-                writer.writerow({'"Height(km)"': h_list[i], '"Electron Density(m^-3)"': ed_list[i]})
+                writer.writerow({'Height(km)': int(h_list[i]), 'Electron Density(m^-3)': ed_list[i]})
 
     def _write_to_txt(self):
         """write ix beta and hprim to a parameters.txt """
