@@ -18,7 +18,7 @@ is located under data/flarED.db
 
 To run the main program:
 ```bash
-python3 flarED.py -ix IX
+python3 flarED_parser.py -ix IX
 ```
 where IX is Solar X-Ray Flare, with accepted float values between [8e-07, 1e-04].
 
