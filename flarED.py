@@ -7,21 +7,98 @@ import operator
 import warnings
 from itertools import groupby
 from decimal import Decimal
+from datetime import datetime
 import csv
 import numpy as np
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from scipy.interpolate import interp1d, CubicSpline
 
 class flarED:
-    
-    def __init__(self, ix):
-        self.ix = ix
 
-    def calculate_and_plot(self):
+    def __init__(self):
+        """ get beta and fprim interpolated functions from polyfit """
+        self.f_beta, self.f_hprim = self._polyfit()
+
+    def flared_h(self, h):
+
+        self.h = h
+
+        a_file = open("data/kontrolno_74.csv")
+        reader = csv.reader(a_file)
+        #reader = csv.reader(a_file, quoting=csv.QUOTE_NONNUMERIC)
+        #for i in range(0,310):
+        #    header = next(reader, None)
+        header = next(reader, None)
+        rows = list(reader)
+
+        stamps = self._extract_column(rows, 0)
+        ixs = self._extract_column(rows, 1)
+        ixs = [float(i) for i in ixs]
+        timestamps = [datetime.strptime(a, '%H:%M') for a in stamps]
+
+        ed_control = self._extract_column(rows, 2)
+        ed_control = [float(i) for i in ed_control]
+
+        ed_list = []
+
+        for ix in ixs:
+            if ix<8e-07:
+                beta = 0.3
+                hprim = 74
+            elif ix>0.0001:
+                beta = float(self.f_beta(0.0001))
+                hprim = float(self.f_hprim(0.0001))
+            else:
+                beta = float(self.f_beta(ix))
+                hprim = float(self.f_hprim(ix))
+            ed_list.append(1.43*10**13*math.exp(-0.15*hprim)*\
+                    math.exp((beta-0.15)*(h-hprim)))
+        times = matplotlib.dates.date2num(timestamps)
+
+        font = {'family': 'serif',
+            'color':  'darkred',
+            'weight': 'normal',
+            'size': 12,
+            }
+
+        fig, ax = plt.subplots()
+        ax.set_yscale('log')
+        lns1 = ax.plot(times, ed_list, '-o', color="thistle", markersize=4,
+                mec='blue', mfc='white', label="flarED method")
+        #lns2 = ax.plot(times, ed_control, '-o', color="thistle", markersize=4,
+        #        mec='red', mfc='white', label="LWPC")
+        lns2 = ax.plot(xnew_easy, ynew_easy, '-o', color="purple", markersize=4,
+                mec='red', mfc='white', label="easyFit method")
+
+        plt.title(r"H=74km")
+        #ax.legend(loc='best')
+        myFmt = matplotlib.dates.DateFormatter('%H:%M')
+        plt.gca().xaxis.set_major_formatter(myFmt)
+
+        ax.set_xlabel(r"time $[\mathrm{h:m}]$", fontdict=font)
+        ax.set_ylabel(r"Electron Density $[\mathrm{m^{-3}}]$", fontdict=font)
+
+        ax2=ax.twinx()
+        lns3 = ax2.plot(times, ixs, '-', color="purple", markersize=4,
+                mec='green', mfc='white', label="Ix")
+        ax2.set_ylabel(r"Flux Intensity $[\mathrm{W*m^{-2}}]$", fontdict=font)
+        ax2.set_yscale('log')
+
+        lns = lns1+lns2+lns3
+        labs = [l.get_label() for l in lns]
+        ax.legend(lns, labs, loc=0)
+
+        plt.show()
+
+    def calculate_and_plot(self, ix):
+
+        self.ix = ix
 
         y, x, beta, hprim = self._calculate_flared()
         y_easy, x_easy = self._calculate_easyfit()
+
         f = interp1d(x, y)
         f_easy = interp1d(x_easy, y_easy)
 
@@ -46,7 +123,7 @@ class flarED:
                 mec='red', mfc='white', label="easyFit method")
 
         plt.title(r"Ix=%.2E $[\mathrm{W*m^{-2}}$], $\mathrm{\beta}$=%.2E $\mathrm{[km^{-1}]}$, H'=%.2f $[\mathrm{km}]$" \
-                %(Decimal(self.ix), Decimal(self.beta), self.hprim), fontdict=font)
+                %(Decimal(self.ix), Decimal(beta), hprim), fontdict=font)
         plt.legend(loc='best')
         plt.xlabel(r"Height $[\mathrm{km}]$", fontdict=font)
         plt.ylabel(r"Electron Density $[\mathrm{m^{-3}}]$", fontdict=font)
@@ -54,6 +131,55 @@ class flarED:
         plt.show()
 
     def _calculate_flared(self):
+
+        beta = float(self.f_beta(self.ix))
+        hprim = float(self.f_hprim(self.ix))
+
+        ed_list=[]
+
+        # for a fixed range of h's from 50-90
+        h_list = np.arange(50,91)
+
+        # calculate electron density values
+        for h in np.nditer(h_list):
+            ed_list.append(1.43*10**13*math.exp(-0.15*hprim)*\
+                    math.exp((beta-0.15)*(h-hprim)))
+
+        # write ix and height tuples to a csv file
+        self._write_to_csv("flared", h_list, ed_list)
+
+        # write parameterers to a txt file
+        self._write_to_txt(beta, hprim)
+
+        return ed_list, h_list, beta, hprim
+
+    def _calculate_easyfit(self):
+
+        a_file = open("data/easyfit.csv")
+        reader = csv.reader(a_file, quoting=csv.QUOTE_NONNUMERIC)
+        header = next(reader, None)
+        rows = list(reader)
+
+        ed_list = []
+
+        # extract first column of each row
+        h_list = self._extract_column(rows, 0)
+
+        for row in rows:
+            ed_list.append(10**(row[1]+row[2]*math.log10(self.ix)+\
+                    row[3]*math.log10(self.ix)**2))
+
+        # write ix and height tuples to a csv file
+        self._write_to_csv("easyfit", h_list, ed_list)
+
+        return ed_list, h_list
+
+
+    def _polyfit(self):
+
+        """ take experimental values of ix, beta, height from a db,
+        make polynomial fit and interpolation of betas and hprim as
+        a function of ix """
 
         database = r"data/flarED.db"
         table_name = 'flares'
@@ -117,54 +243,10 @@ class flarED:
         y2poly = np.concatenate((y2poly1, y2poly2))
 
         # interpolate and calculate x and y's for the whole range
-        f1 = interp1d(xpoly, ypoly)
-        f2 = interp1d(xpoly, y2poly)
-        xnew = np.linspace(x[0], x[-1], num=1000, endpoint=True)
-        ynew = f1(xnew)
-        y2new = f2(xnew)
+        f_beta = interp1d(xpoly, ypoly)
+        f_hprim = interp1d(xpoly, y2poly)
 
-        beta = float(f1(self.ix))
-        hprim = float(f2(self.ix))
-        self.beta = beta
-        self.hprim = hprim
-        ed_list=[]
-
-        # for a fixed range of h's from 50-90
-        h_list = np.arange(50,91)
-
-        # calculate electron density values
-        for h in np.nditer(h_list):
-            ed_list.append(1.43*10**13*math.exp(-0.15*f2(self.ix))*\
-                    math.exp((f1(self.ix)-0.15)*(h-f2(self.ix))))
-
-        # write ix and height tuples to a csv file
-        self._write_to_csv("flared", h_list, ed_list)
-
-        # write parameterers to a txt file
-        self._write_to_txt()
-
-        return ed_list, h_list, beta, hprim
-
-    def _calculate_easyfit(self):
-
-        a_file = open("data/easyfit.csv")
-        reader = csv.reader(a_file, quoting=csv.QUOTE_NONNUMERIC)
-        header = next(reader, None)
-        rows = list(reader)
-
-        ed_list = []
-
-        # extract first column of each row
-        h_list = self._extract_column(rows, 0)
-
-        for row in rows:
-            ed_list.append(10**(row[1]+row[2]*math.log10(self.ix)+\
-                    row[3]*math.log10(self.ix)**2))
-
-        # write ix and height tuples to a csv file
-        self._write_to_csv("easyfit", h_list, ed_list)
-
-        return ed_list, h_list
+        return f_beta, f_hprim
 
     @staticmethod
     def _extract_column(rows, column):
@@ -185,10 +267,10 @@ class flarED:
                 writer.writerow({'Height(km)': int(h_list[i]),
                     'Electron Density(m^-3)': ed_list[i]})
 
-    def _write_to_txt(self):
+    def _write_to_txt(self, beta, hprim):
         """write ix beta and hprim to a parameters.txt """
         params_filename = "results/params(ix=%.2E).txt" % (self.ix)
         with open(params_filename, mode='w') as f:
             f.write("ix = %.2E\n" %(self.ix))
-            f.write("beta = %.2E\n" %(self.beta))
-            f.write("hprim = %.2f" %(self.hprim))
+            f.write("beta = %.2E\n" %(beta))
+            f.write("hprim = %.2f" %(hprim))
