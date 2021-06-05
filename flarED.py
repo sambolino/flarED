@@ -32,6 +32,7 @@ class flarED:
         #    header = next(reader, None)
         header = next(reader, None)
         rows = list(reader)
+        a_file.close()
 
         stamps = self._extract_column(rows, 0)
         ixs = self._extract_column(rows, 1)
@@ -57,6 +58,19 @@ class flarED:
                     math.exp((beta-0.15)*(h-hprim)))
         times = matplotlib.dates.date2num(timestamps)
 
+        #easyfit
+        with open("data/easyfit.csv", 'r') as a_file:
+            reader = csv.reader(a_file)
+            rows = list(reader)
+            matched_row = [row for row in rows if row[0] == str(self.h)][0]
+
+        matched_row = [float(i) for i in matched_row]
+        ed_easyfit=[]
+
+        for ix in ixs:
+            ed_easyfit.append(10**(matched_row[1]+matched_row[2]*math.log10(ix)+\
+                    matched_row[3]*math.log10(ix)**2))
+
         font = {'family': 'serif',
             'color':  'darkred',
             'weight': 'normal',
@@ -69,7 +83,7 @@ class flarED:
                 mec='blue', mfc='white', label="flarED method")
         #lns2 = ax.plot(times, ed_control, '-o', color="thistle", markersize=4,
         #        mec='red', mfc='white', label="LWPC")
-        lns2 = ax.plot(xnew_easy, ynew_easy, '-o', color="purple", markersize=4,
+        lns2 = ax.plot(times, ed_easyfit, '-o', color="thistle", markersize=4,
                 mec='red', mfc='white', label="easyFit method")
 
         plt.title(r"H=74km")
