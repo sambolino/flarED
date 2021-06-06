@@ -8,11 +8,11 @@ from Range import Range
 PARSER = argparse.ArgumentParser(description="",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-PARSER.add_argument("-ix", "--ix", type=float, default=None, required=True,
-        choices=[Range(8.0e-07, 0.0001)], help="Solar X-Ray Flux")
+PARSER.add_argument("-he", "--height", type=int, default=None, required=True,
+        choices=[Range(50, 90)], help="Altitudes [km]")
 ARGS = PARSER.parse_args()
 
 if __name__ == "__main__":
     f = flarED()
-    f.calculate_and_plot(ARGS.ix)
+    f.flared_t(ARGS.height)
 

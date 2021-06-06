@@ -21,83 +21,43 @@ class flarED:
         """ get beta and fprim interpolated functions from polyfit """
         self.f_beta, self.f_hprim = self._polyfit()
 
-    def flared_h(self, h):
-
-        self.h = h
-
-        a_file = open("data/kontrolno_74.csv")
-        reader = csv.reader(a_file)
-        #reader = csv.reader(a_file, quoting=csv.QUOTE_NONNUMERIC)
-        #for i in range(0,310):
-        #    header = next(reader, None)
-        header = next(reader, None)
-        rows = list(reader)
-        a_file.close()
-
-        stamps = self._extract_column(rows, 0)
-        ixs = self._extract_column(rows, 1)
-        ixs = [float(i) for i in ixs]
-        timestamps = [datetime.strptime(a, '%H:%M') for a in stamps]
-
-        ed_control = self._extract_column(rows, 2)
-        ed_control = [float(i) for i in ed_control]
-
-        ed_list = []
-
-        for ix in ixs:
-            if ix<8e-07:
-                beta = 0.3
-                hprim = 74
-            elif ix>0.0001:
-                beta = float(self.f_beta(0.0001))
-                hprim = float(self.f_hprim(0.0001))
-            else:
-                beta = float(self.f_beta(ix))
-                hprim = float(self.f_hprim(ix))
-            ed_list.append(1.43*10**13*math.exp(-0.15*hprim)*\
-                    math.exp((beta-0.15)*(h-hprim)))
-        times = matplotlib.dates.date2num(timestamps)
-
-        #easyfit
-        with open("data/easyfit.csv", 'r') as a_file:
-            reader = csv.reader(a_file)
-            rows = list(reader)
-            matched_row = [row for row in rows if row[0] == str(self.h)][0]
-
-        matched_row = [float(i) for i in matched_row]
-        ed_easyfit=[]
-
-        for ix in ixs:
-            ed_easyfit.append(10**(matched_row[1]+matched_row[2]*math.log10(ix)+\
-                    matched_row[3]*math.log10(ix)**2))
-
-        font = {'family': 'serif',
+        self.font = {'family': 'serif',
             'color':  'darkred',
             'weight': 'normal',
             'size': 12,
             }
 
+    def flared_t(self, h):
+
+        self.h = h
+
+        y, y_ix, x = self._calculate_flared_t()
+        y_easy = self._calculate_easyfit_t(y_ix)
+
+        # plot flared and easyfit ed's as y(log)
+        # plot ix's as y2(log)
+        # plot times as x
+
         fig, ax = plt.subplots()
         ax.set_yscale('log')
-        lns1 = ax.plot(times, ed_list, '-o', color="thistle", markersize=4,
+        lns1 = ax.plot(x, y, '-o', color="thistle", markersize=4,
                 mec='blue', mfc='white', label="flarED method")
         #lns2 = ax.plot(times, ed_control, '-o', color="thistle", markersize=4,
         #        mec='red', mfc='white', label="LWPC")
-        lns2 = ax.plot(times, ed_easyfit, '-o', color="thistle", markersize=4,
+        lns2 = ax.plot(x, y_easy, '-o', color="thistle", markersize=4,
                 mec='red', mfc='white', label="easyFit method")
 
         plt.title(r"H=74km")
-        #ax.legend(loc='best')
         myFmt = matplotlib.dates.DateFormatter('%H:%M')
         plt.gca().xaxis.set_major_formatter(myFmt)
 
-        ax.set_xlabel(r"time $[\mathrm{h:m}]$", fontdict=font)
-        ax.set_ylabel(r"Electron Density $[\mathrm{m^{-3}}]$", fontdict=font)
+        ax.set_xlabel(r"time $[\mathrm{h:m}]$", fontdict=self.font)
+        ax.set_ylabel(r"Electron Density $[\mathrm{m^{-3}}]$", fontdict=self.font)
 
         ax2=ax.twinx()
-        lns3 = ax2.plot(times, ixs, '-', color="purple", markersize=4,
+        lns3 = ax2.plot(x, y_ix, '-', color="purple", markersize=4,
                 mec='green', mfc='white', label="Ix")
-        ax2.set_ylabel(r"Flux Intensity $[\mathrm{W*m^{-2}}]$", fontdict=font)
+        ax2.set_ylabel(r"Flux Intensity $[\mathrm{W*m^{-2}}]$", fontdict=self.font)
         ax2.set_yscale('log')
 
         lns = lns1+lns2+lns3
@@ -106,45 +66,30 @@ class flarED:
 
         plt.show()
 
-    def calculate_and_plot(self, ix):
+    def flared_h(self, ix):
 
         self.ix = ix
 
-        y, x, beta, hprim = self._calculate_flared()
-        y_easy, x_easy = self._calculate_easyfit()
-
-        f = interp1d(x, y)
-        f_easy = interp1d(x_easy, y_easy)
+        y, x, beta, hprim = self._calculate_flared_h()
+        y_easy, x_easy = self._calculate_easyfit_h()
 
         # plot flared and easyfit functions with y as log
-        xnew = x
-        ynew = f(x)
-        xnew_easy = x_easy
-        ynew_easy = f_easy(x_easy)
 
-        for h in x_easy:
-            print("%s, %s" % (f(h), f_easy(h)))
-
-        font = {'family': 'serif',
-            'color':  'darkred',
-            'weight': 'normal',
-            'size': 12,
-            }
         plt.yscale('log')
-        plt.plot(xnew, ynew, '-o', color="thistle", markersize=4,
+        plt.plot(x, y, '-o', color="thistle", markersize=4,
                 mec='blue', mfc='white', label="flarED method")
-        plt.plot(xnew_easy, ynew_easy, '-o', color="purple", markersize=4,
+        plt.plot(x_easy, y_easy, '-o', color="purple", markersize=4,
                 mec='red', mfc='white', label="easyFit method")
 
         plt.title(r"Ix=%.2E $[\mathrm{W*m^{-2}}$], $\mathrm{\beta}$=%.2E $\mathrm{[km^{-1}]}$, H'=%.2f $[\mathrm{km}]$" \
-                %(Decimal(self.ix), Decimal(beta), hprim), fontdict=font)
+                %(Decimal(self.ix), Decimal(beta), hprim), fontdict=self.font)
         plt.legend(loc='best')
-        plt.xlabel(r"Height $[\mathrm{km}]$", fontdict=font)
-        plt.ylabel(r"Electron Density $[\mathrm{m^{-3}}]$", fontdict=font)
+        plt.xlabel(r"Height $[\mathrm{km}]$", fontdict=self.font)
+        plt.ylabel(r"Electron Density $[\mathrm{m^{-3}}]$", fontdict=self.font)
 
         plt.show()
 
-    def _calculate_flared(self):
+    def _calculate_flared_h(self):
 
         beta = float(self.f_beta(self.ix))
         hprim = float(self.f_hprim(self.ix))
@@ -167,7 +112,45 @@ class flarED:
 
         return ed_list, h_list, beta, hprim
 
-    def _calculate_easyfit(self):
+    def _calculate_flared_t(self):
+
+        # open with times, ix's and control ed values
+        a_file = open("data/kontrolno_74.csv")
+        reader = csv.reader(a_file)
+        header = next(reader, None)
+        rows = list(reader)
+        a_file.close()
+
+        stamps = self._extract_column(rows, 0)
+        ixs = self._extract_column(rows, 1)
+        ixs = [float(i) for i in ixs]
+
+        # convert to timestamps then to times suitable for plotting
+        timestamps = [datetime.strptime(a, '%H:%M') for a in stamps]
+        times = matplotlib.dates.date2num(timestamps)
+
+        # control ed values, used for comparison
+        #ed_control = self._extract_column(rows, 2)
+        #ed_control = [float(i) for i in ed_control]
+
+        ed_list = []
+
+        for ix in ixs:
+            if ix<8e-07:
+                beta = 0.3
+                hprim = 74
+            elif ix>0.0001:
+                beta = float(self.f_beta(0.0001))
+                hprim = float(self.f_hprim(0.0001))
+            else:
+                beta = float(self.f_beta(ix))
+                hprim = float(self.f_hprim(ix))
+            ed_list.append(1.43*10**13*math.exp(-0.15*hprim)*\
+                    math.exp((beta-0.15)*(self.h-hprim)))
+
+        return ed_list, ixs, times
+
+    def _calculate_easyfit_h(self):
 
         a_file = open("data/easyfit.csv")
         reader = csv.reader(a_file, quoting=csv.QUOTE_NONNUMERIC)
@@ -188,6 +171,22 @@ class flarED:
 
         return ed_list, h_list
 
+    def _calculate_easyfit_t(self, ixs):
+
+        # find a row with a matching h
+        with open("data/easyfit.csv", 'r') as a_file:
+            reader = csv.reader(a_file)
+            rows = list(reader)
+            matched_row = [row for row in rows if row[0] == str(self.h)][0]
+
+        matched_row = [float(i) for i in matched_row]
+        ed_list=[]
+
+        for ix in ixs:
+            ed_list.append(10**(matched_row[1]+matched_row[2]*math.log10(ix)+\
+                    matched_row[3]*math.log10(ix)**2))
+
+        return ed_list
 
     def _polyfit(self):
 
