@@ -133,7 +133,7 @@ class Flared:
         """return a specific column from a list of rows"""
         return [row[column] for row in rows]
 
-class Flared_t(flared):
+class Flared_t(Flared):
 
     def __init__(self, h):
         super().__init__()
@@ -148,7 +148,6 @@ class Flared_t(flared):
         timestamps = [datetime.strptime(a, '%H:%M') for a in stamps]
         x = matplotlib.dates.date2num(timestamps)
 
-        print(datetime.fromtimestamp(x[0]))
         # write data to a csv file
         self._write_to_csv({'Time(H:M)': stamps,
                     'Electron Density(m^-3)': y,
@@ -183,6 +182,7 @@ class Flared_t(flared):
         labs = [l.get_label() for l in lns]
         ax.legend(lns, labs, loc=0)
 
+        plt.savefig("%s/figure.png" % (self.folder))
         plt.show()
 
     def _calculate_flared(self):
@@ -236,7 +236,7 @@ class Flared_t(flared):
 
         return ed_list
 
-class Flared_h(flared):
+class Flared_h(Flared):
 
     def __init__(self, ix):
         super().__init__()
@@ -268,6 +268,7 @@ class Flared_h(flared):
         plt.xlabel(r"Height $[\mathrm{km}]$", fontdict=self.font)
         plt.ylabel(r"Electron Density $[\mathrm{m^{-3}}]$", fontdict=self.font)
 
+        plt.savefig("%s/figure.png" % (self.folder))
         plt.show()
 
     def _calculate_flared(self):
