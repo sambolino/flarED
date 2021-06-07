@@ -7,7 +7,7 @@ The database of Wait's parameters beta and h' for different values of Ix (solar 
 
 ## EasyFit
 
-To enable the better and more adequate use of data, we give ED results obtained using simple and accurate fitting formula based on a least-squares method, which is logarithmic and represented by a second-degree polynomial `log(ED(h, Ix)) = a1(h) + a2(h)*log(Ix) + a3(h)*(log(Ix))^2` with height dependent coefficients a1(h), a2(h), a3(h)
+To enable the better and more adequate use of data, we give ED results obtained using simple and accurate fitting formula based on a least-squares method, which is logarithmic and represented by a second-degree polynomial `log(ED(h, Ix)) = a1(h) + a2(h)*log(Ix) + a3(h)*(log(Ix))^2` with height dependent coefficients a1(h), a2(h), a3(h).
 
 ## Data
 The parameters data were obtained computation using Fortran code on computer cluster [1,2].
@@ -41,10 +41,10 @@ where HE is altitude [km], with accepted int values between [50, 90].
 The output consists of a figure.png plot and a data_table.csv file,
 located under results/flared_(h or t)-timestamp
 
-Fig. 1 shows the vertical electron density profile (altitude profile) during the presence of solar X-ray flux intensity (Ix)
-![sample output](results/Flared_t-1623074425/figure.png)
+Fig. 1 shows vertical electron density profile (altitude profile) during the presence of solar X-ray flux intensity (Ix)
+![sample output](results/Flared_h-1623074425/figure.png)
 
-Fig 2 solar X-ray flux intensity, and the corresponding electron density evaluated by FlarED and EasyFit at the selected height versus the time.
+Fig 2 shows solar X-ray flux intensity, and the corresponding electron density evaluated by FlarED and EasyFit at the selected height versus the time.
 ![sample output](results/Flared_t-1623074436/figure.png)
 
 ## Contact
