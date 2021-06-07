@@ -22,15 +22,20 @@ is located under data/flarED.db
 
 To run the main program:
 ```bash
-python3 flarED_parser.py -ix IX
+python3 flared_h_parser.py -ix IX
 ```
-where IX is Solar X-Ray Flare, with accepted float values between [8e-07, 1e-04].
+where IX is solar X-Ray flux [W*m^-2], with accepted float values between [8e-07, 1e-04].
+or
+```bash
+python3 flared_t_parser.py -he HE
+```
+where HE is altitude [km], with accepted int values between [50, 90].
 
 ## Output
 
 The output consists of a plot with altitude profile of electron density (sample plot is saved under img folder, you can choose not to save it or to save it somewhere else), csv files (for flared and easyfit methods) with columns of height and electron density and txt file with input Ix value and obtained parametres beta and h' (under results folder).
 
-![sample output](img/Figure_1.png)
+![sample output](results/Flared_t-1623069466/figure.png)
 
 ## Contact
 Vladimir Sreckovic vlada(at)ipb.ac.rs
