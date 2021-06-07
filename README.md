@@ -17,15 +17,20 @@ python3, numpy, scipy, matplotlib
 
 ## Usage
 
-The database is already generated with the csv_to_sqlite.py script. It
-is located under data/flarED.db
+The database of above mentioned Wait's parameters is already generated with the csv_to_sqlite.py script. It
+is located under data/flarED.db.
 
-To run the main program:
+To run the altitude electron density profile calculator for a chosen Ix
 ```bash
 python3 flared_h_parser.py -ix IX
 ```
-where IX is solar X-Ray flux [W*m^-2], with accepted float values between [8e-07, 1e-04].
-or
+where IX is solar X-Ray flux [W*m^-2], with accepted float values
+between [8e-07, 1e-04].
+
+Input files for the time series are located under data/time_series.csv
+and should be replaced with your own data, formatted the same way.
+
+To run time series electron density calculator for a chosen altitude
 ```bash
 python3 flared_t_parser.py -he HE
 ```
@@ -33,9 +38,14 @@ where HE is altitude [km], with accepted int values between [50, 90].
 
 ## Output
 
-The output consists of a plot with altitude profile of electron density (sample plot is saved under img folder, you can choose not to save it or to save it somewhere else), csv files (for flared and easyfit methods) with columns of height and electron density and txt file with input Ix value and obtained parametres beta and h' (under results folder).
+The output consists of a figure.png plot and a data_table.csv file,
+located under results/flared_(h or t)-timestamp
 
-![sample output](results/Flared_t-1623069466/figure.png)
+Fig. 1 shows the vertical electron density profile (altitude profile) during the presence of solar X-ray flux intensity (Ix)
+![sample output](results/Flared_t-1623074425/figure.png)
+
+Fig 2 solar X-ray flux intensity, and the corresponding electron density evaluated by FlarED and EasyFit at the selected height versus the time.
+![sample output](results/Flared_t-1623074436/figure.png)
 
 ## Contact
 Vladimir Sreckovic vlada(at)ipb.ac.rs

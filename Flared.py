@@ -188,7 +188,7 @@ class Flared_t(Flared):
     def _calculate_flared(self):
 
         # open with times, ix's and control ed values
-        a_file = open("data/lwpc.csv")
+        a_file = open("data/time_series.csv")
         reader = csv.reader(a_file)
         header = next(reader, None)
         rows = list(reader)
