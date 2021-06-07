@@ -2,7 +2,7 @@
 
 import sys
 import argparse
-from flared import *
+from Flared import *
 from Range import Range
 
 PARSER = argparse.ArgumentParser(description="",
@@ -13,5 +13,5 @@ PARSER.add_argument("-he", "--height", type=int, default=None, required=True,
 ARGS = PARSER.parse_args()
 
 if __name__ == "__main__":
-    f = flared_t(ARGS.height)
+    f = Flared_t(ARGS.height)
     f.plot()
