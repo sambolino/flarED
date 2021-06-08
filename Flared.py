@@ -18,8 +18,13 @@ from scipy.interpolate import interp1d, CubicSpline
 
 class Flared:
 
+    """ parent class for Flare Electron Density calculations """
+
     def __init__(self):
-        """ get beta and fprim interpolated functions from polyfit """
+
+        """ gets beta and fprim interpolated functions from polyfit,
+        sets folder and font """
+
         self.f_beta, self.f_hprim = self._polyfit()
 
         self.font = {'family': 'serif',
@@ -36,7 +41,7 @@ class Flared:
 
     def _polyfit(self):
 
-        """ take experimental values of ix, beta, height from a db,
+        """ takes experimental values of ix, beta, height from a db,
         make polynomial fit and interpolation of betas and hprim as
         a function of ix """
 
@@ -108,7 +113,9 @@ class Flared:
         return f_beta, f_hprim
 
     def _write_to_csv(self, dict_of_lists):
-        """write data to csv"""
+
+        """writes data from dict to csv"""
+
         ed_filename = "%s/data_table.csv" % (self.folder)
         with open(ed_filename, mode='w', newline='') as f:
 
@@ -123,38 +130,54 @@ class Flared:
 
     @staticmethod
     def _extract_column(rows, column):
-        """return a specific column from a list of rows"""
+
+        """returns a specific column from a list of rows"""
         return [row[column] for row in rows]
 
 class Flared_t(Flared):
 
+    """ Child class for flarED time series """
+
     def __init__(self, h):
+
+        """ initializes parent constructor, sets input h parameter,
+        calculates ED's with flared and easyfit methods """
+
         super().__init__()
         self.h = h
+        self.ed_list, self.ix_list, self.beta_list, self.hprim_list, \
+                self.stamp_list = self._calculate_flared()
+        self.ed_easy_list = self._calculate_easyfit(self.ix_list)
 
-    def plot(self):
+    def write_and_plot(self):
 
-        ed_list, ix_list, beta_list, hprim_list, stamp_list = self._calculate_flared()
-        ed_easy_list = self._calculate_easyfit(ix_list)
+        """ method which invokes writing and plotting methods """
 
         # write data to a csv file
         self._write_to_csv({
-                    'Height(km)': [self.h]*len(stamp_list),
-                    'Time(H:M)': stamp_list,
-                    'Electron Density(m^-3)': ed_list,
-                    'Electron Density(m^-3) easyfit': ed_easy_list,
-                    'Solar Flux(W*m^-2)': ix_list,
-                    'Beta(km^-1)': beta_list,
-                    "H'(km)": hprim_list})
+                    'Height(km)': [self.h]*len(self.stamp_list),
+                    'Time(H:M)': self.stamp_list,
+                    'Electron Density(m^-3)': self.ed_list,
+                    'Electron Density(m^-3) easyfit': self.ed_easy_list,
+                    'Solar Flux(W*m^-2)': self.ix_list,
+                    'Beta(km^-1)': self.beta_list,
+                    "H'(km)": self.hprim_list})
 
-        
+        # plot data
+        self.plot()
+
+    def plot(self):
+
+        """ plots and saves a figure """
+
         # convert to timestamps then to times suitable for plotting
-        timestamp_list = [datetime.strptime(a, '%H:%M') for a in stamp_list]
+        timestamp_list = [datetime.strptime(a, '%H:%M') for a in self.stamp_list]
         x = matplotlib.dates.date2num(timestamp_list)
 
-        y = ed_list
-        y_easy = ed_easy_list
-        y_ix = ix_list
+
+        y = self.ed_list
+        y_easy = self.ed_easy_list
+        y_ix = self.ix_list
 
         # plot flared and easyfit ed's as y(log)
         # plot ix's as y2(log)
@@ -187,6 +210,8 @@ class Flared_t(Flared):
 
     def _calculate_flared(self):
 
+        """ calculate ED's with flarED method """
+
         # open with times, ix's and control ed values
         a_file = open("data/time_series.csv")
         reader = csv.reader(a_file)
@@ -206,6 +231,8 @@ class Flared_t(Flared):
         beta_list = []
         hprim_list = []
 
+        # if ix values are out of range, apply fixed beta and hprim
+        # calculate ED's for given parameters
         for ix in ix_list:
             if ix<8e-07:
                 beta = 0.3
@@ -225,6 +252,8 @@ class Flared_t(Flared):
 
     def _calculate_easyfit(self, ixs):
 
+        """ calculate ED's with easyfit method """
+
         # find a row with a matching h
         with open("data/easyfit.csv", 'r') as a_file:
             reader = csv.reader(a_file)
@@ -234,6 +263,7 @@ class Flared_t(Flared):
         matched_row = [float(i) for i in matched_row]
         ed_list=[]
 
+        # calculate ED's for given parameters
         for ix in ixs:
             ed_list.append(10**(matched_row[1]+matched_row[2]*math.log10(ix)+\
                     matched_row[3]*math.log10(ix)**2))
@@ -242,28 +272,43 @@ class Flared_t(Flared):
 
 class Flared_h(Flared):
 
+    """ Child class for flarED altitude profile for a given solar flux intensity """
+
     def __init__(self, ix):
+
+        """ initializes parent constructor + sets input ix parameter,
+        calculates ED's with flared and easyfit methods """
+
+
         super().__init__()
         self.ix = ix
+        self.ed_list, self.h_list, self.beta, self.hprim = self._calculate_flared()
+        self.ed_easy_list, self.h_easy_list = self._calculate_easyfit()
 
-    def plot(self):
 
-        ed_list, h_list, beta, hprim = self._calculate_flared()
-        ed_easy_list, h_easy_list = self._calculate_easyfit()
-        #ed_easy_list, h_easy_list = self._calculate_easyfit()
+    def write_and_plot(self):
+
+        """ method which calls writing and plotting methods """
 
         # write data to a csv file
         self._write_to_csv({
-                    'Height(km)': [int(a) for a in h_list],
-                    'Electron Density(m^-3)': ed_list,
-                    'Electron Density(m^-3) easyfit': ed_easy_list,
-                    'Solar Flux(W*m^-2)': [self.ix]*len(ed_list),
-                    'Beta(km^-1)': [beta]*len(ed_list),
-                    "H'(km)": [hprim]*len(ed_list)})
+                    'Height(km)': [int(a) for a in self.h_list],
+                    'Electron Density(m^-3)': self.ed_list,
+                    'Electron Density(m^-3) easyfit': self.ed_easy_list,
+                    'Solar Flux(W*m^-2)': [self.ix]*len(self.ed_list),
+                    'Beta(km^-1)': [self.beta]*len(self.ed_list),
+                    "H'(km)": [self.hprim]*len(self.ed_list)})
 
-        x = h_list
-        y = ed_list
-        y_easy = ed_easy_list
+        # plot data
+        self.plot()
+
+    def plot(self):
+
+        """ plots and saves a figure """
+
+        x = self.h_list
+        y = self.ed_list
+        y_easy = self.ed_easy_list
         # plot flared and easyfit functions with y as log
 
         plt.yscale('log')
@@ -273,7 +318,7 @@ class Flared_h(Flared):
                 mec='red', mfc='white', label="easyFit method")
 
         plt.title(r"Ix=%.2E $[\mathrm{W*m^{-2}}$], $\mathrm{\beta}$=%.2E $\mathrm{[km^{-1}]}$, H'=%.2f $[\mathrm{km}]$" \
-                %(Decimal(self.ix), Decimal(beta), hprim), fontdict=self.font)
+                %(Decimal(self.ix), Decimal(self.beta), self.hprim), fontdict=self.font)
         plt.legend(loc='best')
         plt.xlabel(r"Height $[\mathrm{km}]$", fontdict=self.font)
         plt.ylabel(r"Electron Density $[\mathrm{m^{-3}}]$", fontdict=self.font)
@@ -282,6 +327,8 @@ class Flared_h(Flared):
         plt.show()
 
     def _calculate_flared(self):
+
+        """ calculate ED's with flarED method """
 
         beta = float(self.f_beta(self.ix))
         hprim = float(self.f_hprim(self.ix))
@@ -299,6 +346,8 @@ class Flared_h(Flared):
         return ed_list, h_list, beta, hprim
 
     def _calculate_easyfit(self):
+
+        """ calculate ED's with easyfit method """
 
         a_file = open("data/easyfit.csv")
         reader = csv.reader(a_file, quoting=csv.QUOTE_NONNUMERIC)
