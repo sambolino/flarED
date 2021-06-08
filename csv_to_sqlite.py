@@ -25,26 +25,19 @@ def main():
     sql_insert_into_flares = """INSERT INTO flares \
             VALUES(?,?,?,?,?,?,?,?,?,?); """
 
-    database = r"data/flarED.db"
+    database = r"data/flare_vlf.db"
     conn = create_connection(database)
 
     if conn is not None:
         create_table(conn, sql_create_flares_table)
         truncate_table(conn, table_name)
 
-    a_file = open("data/Sheet1.csv")
+    a_file = open("data/flare_vlf.csv")
     rows = csv.reader(a_file)
     header = next(rows, None)
 
     with conn:
         populate_table(conn, sql_insert_into_flares, rows)
-
-    '''
-    date_test = "03 Nov 2008"
-    time_test = "11:20"
-    datetime_test = "%s %s" %(date_test, time_test,)
-    date_out = datetime.datetime.strptime(datetime_test, "%d %b %Y %H:%M")
-    '''
 
 if __name__ == '__main__':
     main()

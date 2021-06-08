@@ -45,7 +45,7 @@ class Flared:
         make polynomial fit and interpolation of betas and hprim as
         a function of ix """
 
-        database = r"data/flarED.db"
+        database = r"data/flare_vlf.db"
         table_name = 'flares'
         conn = create_connection(database)
 
