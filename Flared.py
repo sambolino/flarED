@@ -25,7 +25,8 @@ class Flared:
         """ gets beta and fprim interpolated functions from polyfit,
         sets folder and font """
 
-        self.f_beta, self.f_hprim = self._polyfit()
+        self.f_beta, self.f_hprim, self.ix_vlf, self.beta_vlf, \
+                self.hprim_vlf = self._polyfit()
 
         self.font = {'family': 'serif',
             'color':  'darkred',
@@ -86,8 +87,7 @@ class Flared:
         y2 = h_values
 
         # we fit first most of the curve as 15th degree polynomial,
-        # then skip jumpy parts then fit as 1st (but it looks like it's 2nd??)
-        # degree polynomial
+        # then skip jumpy parts then fit as 1st degree polynomial
         warnings.filterwarnings('ignore')
 
         xpoly1 = np.linspace(x[0], x[-40], num=100, endpoint=True)
@@ -110,7 +110,48 @@ class Flared:
         f_beta = interp1d(xpoly, ypoly)
         f_hprim = interp1d(xpoly, y2poly)
 
-        return f_beta, f_hprim
+        return f_beta, f_hprim, x, y, y2
+
+    def plot_polyfit(self):
+
+        x = self.ix_vlf
+        y_l1 = self.beta_vlf
+        y_l2 = self.f_beta(x)
+        y_r1 = self.hprim_vlf
+        y_r2 = self.f_hprim(x)
+
+        fig, ax = plt.subplots()
+        ax.set_xscale('log')
+        lns1 = ax.plot(x, y_l1, 'o', color="thistle", markersize=4,
+                mec='blue', mfc='white', label="beta vlf")
+        lns2 = ax.plot(x, y_l2, '-', color="thistle", markersize=4,
+                mec='red', mfc='white', label="beta interpolation")
+
+        plt.title("Polyfit of beta and hprim")
+
+        ax.set_xlabel(r"Flux Intensity $[\mathrm{W*m^{-2}}]$", fontdict=self.font)
+        #ax.set_xlabel(r" $[\mathrm{h:m}]$", fontdict=self.font)
+        ax.set_ylabel(r"Beta $[\mathrm{km^{-1}}]$", fontdict=self.font)
+
+        ax2=ax.twinx()
+        lns3 = ax2.plot(x, y_r1, 'o', color="green", markersize=4, label="hprim vlf")
+        lns4 = ax2.plot(x, y_r2, '-', color="purple", markersize=4, label="hprim interpolation")
+        ax2.set_ylabel(r"H' $[\mathrm{km}]$", fontdict=self.font)
+        #ax2.set_yscale('log')
+
+        lns = lns1+lns2+lns3+lns4
+        labs = [l.get_label() for l in lns]
+        ax.legend(lns, labs, loc=1)
+
+        #plt.savefig("%s/figure.png" % (self.folder))
+        plt.show()
+
+    def _calculate_flared(self):
+
+        """ calculate ED's with flarED method """
+
+        # open with times, ix's and control ed values
+
 
     def _write_to_csv(self, dict_of_lists):
 
