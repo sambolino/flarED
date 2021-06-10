@@ -230,7 +230,7 @@ class Flared_t(Flared):
         lns2 = ax.plot(x, y_easy, '-o', color="thistle", markersize=4,
                 mec='red', mfc='white', label="easyFit method")
 
-        plt.title(r"H=%s" %(self.h))
+        plt.title(r"H=%s km" %(self.h))
         myFmt = matplotlib.dates.DateFormatter('%H:%M')
         plt.gca().xaxis.set_major_formatter(myFmt)
 
