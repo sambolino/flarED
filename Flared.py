@@ -14,7 +14,8 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
-from scipy.interpolate import interp1d, CubicSpline
+from scipy.interpolate import interp1d
+from scipy.stats import gaussian_kde
 
 class Flared:
 
@@ -25,8 +26,12 @@ class Flared:
         """ gets beta and fprim interpolated functions from polyfit,
         sets folder and font """
 
-        self.f_beta, self.f_hprim, self.ix_vlf, self.beta_vlf, \
-                self.hprim_vlf = self._polyfit()
+
+        self.query, self.ix_vlf, self.beta_vlf, self.hprim_vlf = self._query_db()
+
+        self.f_beta, self.f_hprim, self.ix_vlf_reduced, self.beta_vlf_reduced, \
+                self.hprim_vlf_reduced = self._polyfit(self.query)
+
 
         self.font = {'family': 'serif',
             'color':  'darkred',
@@ -40,11 +45,9 @@ class Flared:
         if not os.path.exists(self.folder):
             os.mkdir(self.folder)
 
-    def _polyfit(self):
+    def _query_db(self):
 
-        """ takes experimental values of ix, beta, height from a db,
-        make polynomial fit and interpolation of betas and hprim as
-        a function of ix """
+        """ queries db for experimental ix, beta and h values """
 
         database = r"data/flare_vlf.db"
         table_name = 'flares'
@@ -56,6 +59,17 @@ class Flared:
                     FROM %s \
                     ORDER BY ix;""" %(table_name)
             query = custom_query(conn, sql)
+        ix_vlf= self._extract_column(query, 0)
+        beta_vlf= self._extract_column(query, 1)
+        hprim_vlf= self._extract_column(query, 2)
+
+        return query, ix_vlf, beta_vlf, hprim_vlf
+
+    def _polyfit(self, query):
+
+        """ takes experimental values of ix, beta, height from a db,
+        make polynomial fit and interpolation of betas and hprim as
+        a function of ix """
 
         # there might be duplicated values for ix
         # make a new list where all the ix duplicates will condense to a single
@@ -80,11 +94,11 @@ class Flared:
         # messing with the interpolation
         list_of_averages[-1] = (0.0001, list_of_averages[-1][1],
                 list_of_averages[-1][2])
-        ix_values, beta_values, h_values = map(list, zip(*list_of_averages))
+        ix_values, beta_values, hprim_values = map(list, zip(*list_of_averages))
 
         x = ix_values
         y = beta_values
-        y2 = h_values
+        y2 = hprim_values
 
         # we fit first most of the curve as 15th degree polynomial,
         # then skip jumpy parts then fit as 1st degree polynomial
@@ -114,10 +128,13 @@ class Flared:
 
     def plot_polyfit(self):
 
-        x = self.ix_vlf
-        y_l1 = self.beta_vlf
+        """ plot reduced vlf beta and hprim dots (see explanation in _polyfit along with
+        interpolated beta and hprim functions of ix """
+
+        x = self.ix_vlf_reduced
+        y_l1 = self.beta_vlf_reduced
         y_l2 = self.f_beta(x)
-        y_r1 = self.hprim_vlf
+        y_r1 = self.hprim_vlf_reduced
         y_r2 = self.f_hprim(x)
 
         fig, ax = plt.subplots()
@@ -130,28 +147,35 @@ class Flared:
         plt.title("Polyfit of beta and hprim")
 
         ax.set_xlabel(r"Flux Intensity $[\mathrm{W*m^{-2}}]$", fontdict=self.font)
-        #ax.set_xlabel(r" $[\mathrm{h:m}]$", fontdict=self.font)
         ax.set_ylabel(r"Beta $[\mathrm{km^{-1}}]$", fontdict=self.font)
 
         ax2=ax.twinx()
         lns3 = ax2.plot(x, y_r1, 'o', color="green", markersize=4, label="hprim vlf")
         lns4 = ax2.plot(x, y_r2, '-', color="purple", markersize=4, label="hprim interpolation")
         ax2.set_ylabel(r"H' $[\mathrm{km}]$", fontdict=self.font)
-        #ax2.set_yscale('log')
 
         lns = lns1+lns2+lns3+lns4
         labs = [l.get_label() for l in lns]
         ax.legend(lns, labs, loc=1)
 
-        #plt.savefig("%s/figure.png" % (self.folder))
         plt.show()
 
-    def _calculate_flared(self):
+    def plot_param_density(self, data_list, xlabel):
 
-        """ calculate ED's with flarED method """
+        """ Density and rug plot of a certain parameter (input data list) """
 
-        # open with times, ix's and control ed values
+        density = gaussian_kde(data_list)
+        xs = np.linspace(min(data_list),max(data_list),200)
+        density.covariance_factor = lambda : .25
+        density._compute_covariance()
+        fig, ax = plt.subplots()
+        ax.plot(xs,density(xs))
+        ax.plot(data_list, [0.0001]*len(data_list), '|', color='r')
+        ax.set_xlabel(xlabel, fontdict=self.font)
+        ax.set_ylabel(r"Density(x)", fontdict=self.font)
+        plt.title("Density and Rug plot")
 
+        plt.show()
 
     def _write_to_csv(self, dict_of_lists):
 
