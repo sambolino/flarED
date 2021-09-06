@@ -3,7 +3,7 @@
 ## Flare Electron Density
 For the input values of solar X-ray flux (Ix) we evaluate (interpolate) Wait's parameters beta and h' and calculate altitude values of electron density (ED) for the low terrestrial ionosphere.
 
-The database of Wait's parameters beta and h' for different values of Ix (solar X-ray flux) i.e. different classes of solar flares (during the period of ascending phase and maximum of the solar cycle 24 i.e. during 2009–2014) is made. Solar flares are monitored and analyzed by VLF/LF technique and  parameters beta and h' obtained by method described in [1,2].
+The database of Wait's parameters beta and h' for different values of Ix (solar X-ray flux) i.e. different classes of solar flares (during the period of ascending phase and maximum of the solar cycle 24 i.e. during 2009–2014) is made. Solar flares are monitored and analyzed by VLF/LF technique and  parameters beta and h' obtained by method described in [1,2,3].
 
 ## EasyFit
 
@@ -62,3 +62,5 @@ Research, 57(4), 1029-1043.
 [2] Šulić, D. M., & Srećković, V. A. (2014). A comparative study of
 measured amplitude and phase perturbations of VLF and LF radio signals
 induced by solar flares. Serbian Astronomical Journal, (188), 45-54.
+
+[3] Srećković, V. A., Šulić, D. M., Ignjatović, L., & Vujčić, V. (2021). Low Ionosphere under Influence of Strong Solar Radiation: Diagnostics and Modeling. Applied Sciences, 11(16), 7194.
