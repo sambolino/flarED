@@ -47,20 +47,21 @@ Fig. 1 shows vertical electron density profile (altitude profile) during the pre
 
 Fig. 2 shows solar X-ray flux intensity, and the corresponding electron density evaluated by FlarED and EasyFit at the selected height versus the time.
 
-![sample output](results/Flared_t-1623074436/figure.png)
+![sample output](results/Flared_t-1633865366/figure.png)
 
 ## Contact
 Vladimir Sreckovic vlada(at)ipb.ac.rs
 Veljko Vujcic veljko(at)aob.rs
 
 ## Related research articles:
-[1] Šulić, D. M., Srećković, V. A., & Mihajlov, A. A. (2016). A study of
+[1] Srećković, V. A., Šulić, D. M., Ignjatović, L., & Vujčić, V. (2021). Low Ionosphere under Influence of Strong Solar Radiation: Diagnostics and Modeling. Applied Sciences, 11(16), 7194.
+
+[2] Šulić, D. M., Srećković, V. A., & Mihajlov, A. A. (2016). A study of
 VLF signals variations associated with the changes of ionization level
 in the D-region in consequence of solar conditions. Advances in Space
 Research, 57(4), 1029-1043.
 
-[2] Šulić, D. M., & Srećković, V. A. (2014). A comparative study of
+[3] Šulić, D. M., & Srećković, V. A. (2014). A comparative study of
 measured amplitude and phase perturbations of VLF and LF radio signals
 induced by solar flares. Serbian Astronomical Journal, (188), 45-54.
 
-[3] Srećković, V. A., Šulić, D. M., Ignjatović, L., & Vujčić, V. (2021). Low Ionosphere under Influence of Strong Solar Radiation: Diagnostics and Modeling. Applied Sciences, 11(16), 7194.
