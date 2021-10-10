@@ -8,7 +8,7 @@ import operator
 import warnings
 from itertools import groupby
 from decimal import Decimal
-from datetime import datetime
+from datetime import datetime, timedelta
 import csv
 import numpy as np
 import matplotlib
@@ -211,20 +211,29 @@ class Flared_t(Flared):
         super().__init__()
         self.h = h
         self.ed_list, self.ix_list, self.beta_list, self.hprim_list, \
-                self.stamp_list = self._calculate_flared()
+                self.timestamp_list, self.timestamp_delta_list = self._calculate_flared()
         self.ed_easy_list = self._calculate_easyfit(self.ix_list)
 
     def write_and_plot(self):
 
         """ method which invokes writing and plotting methods """
+        timestamp_list_hms = []
+        for t in self.timestamp_list:
+            timestamp_list_hms += [t.strftime("%H:%M:%S")]
+
+        timestamp_delta_list_hms = []
+        for t in self.timestamp_delta_list:
+            timestamp_delta_list_hms += [t.strftime("%H:%M:%S")]
+        
 
         # write data to a csv file
         self._write_to_csv({
-                    'Height(km)': [self.h]*len(self.stamp_list),
-                    'Time(H:M)': self.stamp_list,
+                    'Height(km)': [self.h]*len(self.timestamp_list),
+                    'Time(Ix) (H:M:S)': timestamp_list_hms,
+                    'Solar Flux Ix (W*m^-2)': self.ix_list,
+                    'Time(ED) (H:M:S)': timestamp_delta_list_hms,
                     'Electron Density(m^-3)': self.ed_list,
                     'Electron Density(m^-3) easyfit': self.ed_easy_list,
-                    'Solar Flux(W*m^-2)': self.ix_list,
                     'Beta(km^-1)': self.beta_list,
                     "H'(km)": self.hprim_list})
 
@@ -235,10 +244,9 @@ class Flared_t(Flared):
 
         """ plots and saves a figure """
 
-        # convert to timestamps then to times suitable for plotting
-        timestamp_list = [datetime.strptime(a, '%H:%M') for a in self.stamp_list]
-        x = matplotlib.dates.date2num(timestamp_list)
-
+        # convert to times suitable for plotting
+        x = matplotlib.dates.date2num(self.timestamp_list)
+        x_delta = matplotlib.dates.date2num(self.timestamp_delta_list)
 
         y = self.ed_list
         y_easy = self.ed_easy_list
@@ -249,9 +257,9 @@ class Flared_t(Flared):
         # plot times as x
         fig, ax = plt.subplots()
         ax.set_yscale('log')
-        lns1 = ax.plot(x, y, '-o', color="thistle", markersize=4,
+        lns1 = ax.plot(x_delta, y, '-o', color="thistle", markersize=4,
                 mec='blue', mfc='white', label="flarED method")
-        lns2 = ax.plot(x, y_easy, '-o', color="thistle", markersize=4,
+        lns2 = ax.plot(x_delta, y_easy, '-o', color="thistle", markersize=4,
                 mec='red', mfc='white', label="easyFit method")
 
         plt.title(r"H=%s km" %(self.h))
@@ -284,9 +292,18 @@ class Flared_t(Flared):
         rows = list(reader)
         a_file.close()
 
-        stamps = self._extract_column(rows, 0)
         ix_list = self._extract_column(rows, 1)
         ix_list = [float(i) for i in ix_list]
+
+        # for ED values we incorporate time delay due to the
+        # slughiness of the ionosphere, based on statistics of SF events
+        stamps = self._extract_column(rows, 0)
+        timestamp_list = [datetime.strptime(a, '%H:%M') for a in stamps]
+        delta_t = 0.45385 + (-0.44863*math.log10(max(ix_list, 
+            key=lambda x:float(x))))
+        timestamp_delta_list = []
+        for t in timestamp_list: 
+            timestamp_delta_list += [t+timedelta(minutes=delta_t)]
 
         # control ed values, used for comparison
         #ed_control = self._extract_column(rows, 2)
@@ -313,7 +330,7 @@ class Flared_t(Flared):
             ed_list.append(1.43*10**13*math.exp(-0.15*hprim)*\
                     math.exp((beta-0.15)*(self.h-hprim)))
 
-        return ed_list, ix_list, beta_list, hprim_list, stamps
+        return ed_list, ix_list, beta_list, hprim_list, timestamp_list, timestamp_delta_list
 
     def _calculate_easyfit(self, ixs):
 
