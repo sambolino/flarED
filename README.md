@@ -36,6 +36,13 @@ python3 flared_t_parser.py -he HE
 ```
 where HE is altitude [km], with accepted int values between [50, 90].
 
+Here we introduce time delay Δt as time between the maximum of the SF Flux and
+maximum of the signal and electron density due to the ionosphere sluggishness.
+
+It can be presented by linear dependence on logarithm of X-ray flux
+`Δt= a + b*log(Ix)` where coefficients take values a = 0.45385 and b = -0.44863 and Ix<sub>max</sub>
+is X-ray flux at peak time.
+
 ## Output
 
 The output consists of a figure.png plot and a data_table.csv file,
