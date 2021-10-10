@@ -9,7 +9,7 @@ PARSER = argparse.ArgumentParser(description="",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
 PARSER.add_argument("-ix", "--ix", type=float, default=None, required=True,
-        choices=[Range(8.0e-07, 0.0001)], help="Solar X-Ray Flux")
+        choices=[Range(8.0e-07, 0.00022)], help="Solar X-Ray Flux")
 ARGS = PARSER.parse_args()
 
 if __name__ == "__main__":

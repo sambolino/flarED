@@ -71,30 +71,7 @@ class Flared:
         make polynomial fit and interpolation of betas and hprim as
         a function of ix """
 
-        # there might be duplicated values for ix
-        # make a new list where all the ix duplicates will condense to a single
-        # value while new beta and h get average value from n duplicates
-        list_of_averages = []
-        for k, g in groupby(query, operator.itemgetter(0)):
-            list_of_tuples = list(g)
-            listlen = len(list_of_tuples)
-            if listlen > 1:
-                ix_duplicate = list_of_tuples[0][0]
-                beta_sum = 0
-                h_sum = 0
-                for i in range(listlen):
-                    beta_sum += list_of_tuples[i][1]
-                    h_sum += list_of_tuples[i][2]
-                list_of_averages.append((ix_duplicate, round(beta_sum/listlen, 3),
-                    round(h_sum/listlen, 3)))
-            elif listlen==1:
-                list_of_averages.append(list_of_tuples[0])
-
-        # change the last ix value which was too large and was
-        # messing with the interpolation
-        list_of_averages[-1] = (0.0001, list_of_averages[-1][1],
-                list_of_averages[-1][2])
-        ix_values, beta_values, hprim_values = map(list, zip(*list_of_averages))
+        ix_values, beta_values, hprim_values = map(list, zip(*self._get_list_of_averages(query)))
 
         x = ix_values
         y = beta_values
@@ -125,6 +102,63 @@ class Flared:
         f_hprim = interp1d(xpoly, y2poly)
 
         return f_beta, f_hprim, x, y, y2
+
+    def _polyfit_linear(self, query):
+
+        """ takes experimental values of ix, beta, height from a db,
+        make polynomial fit and interpolation of betas and hprim as
+        a function of ix """
+
+        ix_values, beta_values, hprim_values = map(list, zip(*self._get_list_of_averages(query)))
+
+        x = ix_values
+        y = beta_values
+        y2 = hprim_values
+
+        # we fit first most of the curve as 15th degree polynomial,
+        # then skip jumpy parts then fit as 1st degree polynomial
+        warnings.filterwarnings('ignore')
+
+        xpoly = np.linspace(x[0], x[-1], num=100, endpoint=True)
+
+        poly_deg = 1
+        ypoly = np.polyval(np.polyfit(x, y, poly_deg), xpoly)
+        y2poly = np.polyval(np.polyfit(x, y2, poly_deg), xpoly)
+
+        # interpolate and calculate x and y's for the whole range
+        f_beta = interp1d(xpoly, ypoly)
+        f_hprim = interp1d(xpoly, y2poly)
+
+        return f_beta, f_hprim, x, y, y2
+
+    def _get_list_of_averages(self, query):
+
+        """there might be duplicated values for ix
+        make a new list where all the ix duplicates will condense to a single
+        value while new beta and h get average value from n duplicates """
+        
+        list_of_averages = []
+        for k, g in groupby(query, operator.itemgetter(0)):
+            list_of_tuples = list(g)
+            listlen = len(list_of_tuples)
+            if listlen > 1:
+                ix_duplicate = list_of_tuples[0][0]
+                beta_sum = 0
+                h_sum = 0
+                for i in range(listlen):
+                    beta_sum += list_of_tuples[i][1]
+                    h_sum += list_of_tuples[i][2]
+                list_of_averages.append((ix_duplicate, round(beta_sum/listlen, 3),
+                    round(h_sum/listlen, 3)))
+            elif listlen==1:
+                list_of_averages.append(list_of_tuples[0])
+
+        # change the last ix value which was too large and was
+        # messing with the interpolation
+        #list_of_averages[-1] = (0.0001, list_of_averages[-1][1],
+        #        list_of_averages[-1][2])
+
+        return list_of_averages
 
     def plot_polyfit(self):
 
@@ -317,11 +351,8 @@ class Flared_t(Flared):
         # calculate ED's for given parameters
         for ix in ix_list:
             if ix<8e-07:
-                beta = 0.3
-                hprim = 74
-            elif ix>0.0001:
-                beta = float(self.f_beta(0.0001))
-                hprim = float(self.f_hprim(0.0001))
+                beta = min(self.f_beta(ix))
+                hprim = min(self.f_hprim(ix))
             else:
                 beta = float(self.f_beta(ix))
                 hprim = float(self.f_hprim(ix))
