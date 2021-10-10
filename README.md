@@ -50,11 +50,11 @@ located under results/flared_(h or t)-timestamp.
 
 Fig. 1 shows vertical electron density profile (altitude profile) during the presence of solar X-ray flux intensity (Ix).
 
-![sample output](results/Flared_h-1623074425/figure.png)
+![sample output](results/Flared_h-1633880174/figure.png)
 
 Fig. 2 shows solar X-ray flux intensity, and the corresponding electron density evaluated by FlarED and EasyFit at the selected height versus the time.
 
-![sample output](results/Flared_t-1633865366/figure.png)
+![sample output](results/Flared_t-1633880191/figure.png)
 
 ## Contact
 Vladimir Sreckovic vlada(at)ipb.ac.rs
